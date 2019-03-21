@@ -12,30 +12,30 @@
        ,ret
        )))
 
+(defun epcl--success-p (ret)
+  (eq (car ret) :success))
+
 (defmacro epcl--success (point &rest vs)
   `(list :success ,point ,@vs))
 
-(defmacro epcl--error (point)
-  `(list :error ,point))
+(defmacro epcl--success1 (point vs)
+  `(cons :success (cons ,point ,vs)))
 
-(defmacro epcl--ret (point &rest vs)
-  `(list ,point ,@vs))
-
-(defmacro epcl--ret1 (point vs)
-  `(list ,point ,@vs))
+(defmacro epcl--failed (point)
+  `(list :failed ,point))
 
 (defmacro epcl--point (ret)
-  `(car ,ret))
+  `(cadr ,ret))
 
 (defmacro epcl--list (ret)
-  `(cdr ,ret))
+  `(cddr ,ret))
 
 (defun epcl-regexp (regexp)
   (lambda (point)
     (goto-char point)
     (if (re-search-forward (concat "\\=" regexp) nil t)
-	(epcl--ret (point) (match-string 0)))))
-
+	(epcl--ret (point) (match-string 0))
+      (epcl--failed point))))
 
 (defun epcl-token (p)
   (let ((parser (epcl-seq
@@ -44,32 +44,41 @@
 	)
     (lambda (point)
       (let ((ret (funcall parser point)))
-	(message (format "ret=%s" ret))
-	(if ret 
-	    (epcl--ret (epcl--point ret)
-		       (cadr (epcl--list ret))))))))
+	(if (epcl--success-p ret)
+	    (epcl--success (epcl--point ret)
+			   (cadr (epcl--list ret)))
+	  (epcl--failed
+	   (epcl--point ret)))))))
+	  
 
 (defun epcl-seq (&rest ps)
   (lambda (point)
-    (let ((ret nil)
+    (let ((pos point)
+	  (ret nil)
 	  (done nil)
 	  (ps2 ps))
       (while (and (not done)
 		  ps2)
 	(let* ((p (car ps2))
-	       (r (funcall p point)))
-	  (if r
-	      (let ((pos (epcl--point r))
-		    (vs  (epcl--list r)))
-		(setq point pos)
+	       (r (funcall p pos))
+	       (pos2 (epcl--point r))
+	       (vs  (epcl--list r)))
+	  (if (epcl--success-p r)
+	      (progn
+		(setq pos pos2)
 		(setq ret (cons vs ret))
 		(setq ps2 (cdr ps2)))
 	    (progn
-	     (setq done t)
-	     (setq ret nil)))))
+	      (setq ret nil)
+	      (setq pos pos2)
+	      (setq done t))
+	    )
+	  )
+	)
       (if ret
-	  (epcl--ret1 point
-		      (apply #'append (reverse ret)))
+	  (epcl--success1 pos
+			  (apply #'append (reverse ret)))
+	(epcl--failed pos)
 	)
       )
     )
@@ -84,24 +93,31 @@
 		  ps2)
 	(let* ((p (car ps2))
 	       (r (funcall p point)))
-	  (if r
+	  (if (epcl--success-p r)
 	      (progn (setq ret r)
 		     (setq done t))
-	    (setq ps2 (cdr ps2)))))
+	    (let ((pos (epcl--point r)))
+	      (if (/= pos point)
+		  (progn
+		    (setq ret (epcl-failed pos))
+		    (setq done t))))))
+	(setq ps2 (cdr ps2)))
       ret
       )
     )
   )
 
+
 (defun epcl-bind (p action)
   (lambda (point)
     (let ((r (funcall p point)))
-      (if r
+      (if (epcl--success-p r)
 	  (let ((pos (epcl--point r))
 		(vs  (epcl--list  r)))
-	    (epcl--ret
+	    (epcl--success
 	     pos
-	     (apply action vs)))))))
+	     (apply action vs)))
+	(epcl--failed point)))))
 	    
 
 (defun epcl-apply (p)
