@@ -38,18 +38,10 @@
       (epcl--failed point))))
 
 (defun epcl-token (p)
-  (let ((parser (epcl-seq
-		 (epcl-regexp "\\s-*") p)
-		)
-	)
-    (lambda (point)
-      (let ((ret (funcall parser point)))
-	(if (epcl--success-p ret)
-	    (epcl--success (epcl--point ret)
-			   (cadr (epcl--list ret)))
-	  (epcl--failed
-	   (epcl--point ret)))))))
-	  
+  (epcl-try
+   (epcl-seq
+    (epcl-discard (epcl-regexp "\\s-*"))
+    p)))
 
 (defun epcl-seq (&rest ps)
   (lambda (point)
@@ -107,6 +99,29 @@
     )
   )
 
+(defmacro epcl-lazy (p0)
+  `(epcl--lazy-helper (lambda () ,p0)))
+  
+(defun epcl--lazy-helper (p0)
+  (let ((p nil))
+    (lambda (point)      
+      (if (not p) (setq p (funcall p0)))
+      (funcall p point))))
+
+
+(defun epcl-try (p)
+  (lambda (point)
+    (let ((r (funcall p point)))
+      (if (epcl--success-p r)
+	  r
+	(epcl--failed point)))))
+
+(defun epcl-discard (p)
+  (lambda (point)
+    (let ((r (funcall p point)))
+      (if (epcl--success-p r)
+	  (epcl--success (epcl--point r))
+	(epcl--failed point)))))
 
 (defun epcl-bind (p action)
   (lambda (point)
@@ -125,6 +140,12 @@
     (funcall p (point))
     )
   )
+
+(defun epcl-parse-string (p str)
+  (with-temp-buffer
+    (insert str)
+    (goto-char (point-min))
+    (epcl-apply p)))
 
 
 (provide 'epcl)
