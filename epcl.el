@@ -134,6 +134,16 @@
 	     (apply action vs)))
 	(epcl--failed point)))))
 	    
+(defmacro epcl-let* (arglist &rest body)
+  (let* ((vs (mapcar #'car (seq-filter #'listp arglist)))
+	 (ps (mapcar (lambda (e)
+		       (if (listp e)
+			   (cadr e)
+			 `(epcl-discard ,e))) arglist)))
+    `(epcl-bind
+      (epcl-seq ,@ps)
+      (lambda ,vs ,@body))))
+	
 
 (defun epcl-apply (p)
   (save-excursion
