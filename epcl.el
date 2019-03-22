@@ -99,7 +99,7 @@
 	    (let ((pos (epcl--point r)))
 	      (if (/= pos point)
 		  (progn
-		    (setq ret (epcl-failed pos))
+		    (setq ret (epcl--failed pos))
 		    (setq done t))))))
 	(setq ps2 (cdr ps2)))
       ret
