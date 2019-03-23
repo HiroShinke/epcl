@@ -168,10 +168,18 @@
    )
   )
 
-(let* ((a  (epcl-token (epcl-regexp "[[:digit:]]+")))
-       (d  (epcl-bind a #'string-to-number))
-       (plus (epcl-token (epcl-regexp "\\+")))
-       (op (epcl-bind  plus (lambda (n) #'+) ))
-       (c  (epcl-chain d op)))
-  (epcl-parse-string c " 1 +  2 +3+4+5"))
+(ert-deftest chain-test ()
+  (should
+   (equal
+    (epcl-ret-success 10 15)
+    (let* ((a  (epcl-token (epcl-regexp "[[:digit:]]+")))
+	   (d  (epcl-bind a #'string-to-number))
+	   (plus (epcl-token (epcl-regexp "\\+")))
+	   (op (epcl-bind  plus (lambda (n) #'+) ))
+	   (c  (epcl-chain d op)))
+      (epcl-parse-string c "1+2+3+4+5"))
+    )
+   )
+  )
+
 
