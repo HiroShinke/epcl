@@ -15,11 +15,8 @@
 (defun epcl--success-p (ret)
   (eq (car ret) :success))
 
-(defmacro epcl--success (point &rest vs)
-  `(list :success ,point ,@vs))
-
-(defmacro epcl--success1 (point vs)
-  `(cons :success (cons ,point ,vs)))
+(defmacro epcl--success (point v)
+  `(list :success ,point ,v))
 
 (defmacro epcl--failed (point)
   `(list :failed ,point))
@@ -27,35 +24,27 @@
 (defmacro epcl--point (ret)
   `(cadr ,ret))
 
-(defmacro epcl--list (ret)
-  `(cddr ,ret))
+(defmacro epcl--value (ret)
+  `(caddr ,ret))
 
 (defun epcl-regexp (regexp)
   (lambda (point)
     (goto-char point)
     (if (re-search-forward (concat "\\=" regexp) nil t)
-	(epcl--ret (point) (match-string 0))
+	(epcl--success (point) (match-string 0))
       (epcl--failed point))))
 
 (defun epcl-token (p)
   (epcl-try
-   (epcl-seq
-    (epcl-discard (epcl-regexp "\\s-*"))
-    p)))
+   (epcl-let
+    ((x (epcl-regexp "\\s-*"))
+     (v p)
+     )
+    v)))
 
 
 (defun epcl-seq (&rest ps)
-  (epcl-bind1
-   (epcl--seq ps)
-   (lambda (vs)
-     (apply #'append vs))))
 
-
-(defun epcl--seq (ps)
-  " ps : parser list.
-    (epcl--seq ps) return each return value of parser as separate values in a list.
-    don't append these as like epcl-seq do.
-  "
   (lambda (point)
     (let ((pos point)
 	  (ret nil)
@@ -63,10 +52,13 @@
 	  (ps2 ps))
       (while (and (not done)
 		  ps2)
+
+	(message (format "ret=%s" ret))
+
 	(let* ((p (car ps2))
 	       (r (funcall p pos))
 	       (pos2 (epcl--point r))
-	       (vs  (epcl--list r)))
+	       (vs  (epcl--value r)))
 	  (if (epcl--success-p r)
 	      (progn
 		(setq pos pos2)
@@ -80,9 +72,7 @@
 	  )
 	)
       (if ret
-	  (epcl--success
-	   pos
-	   (reverse ret))
+	  (epcl--success pos (reverse ret))
 	(epcl--failed pos)
 	)
       )
@@ -130,55 +120,41 @@
 	  r
 	(epcl--failed point)))))
 
-(defun epcl-discard (p)
-  (lambda (point)
-    (let ((r (funcall p point)))
-      (if (epcl--success-p r)
-	  (epcl--success (epcl--point r))
-	(epcl--failed point)))))
-
 (defun epcl-bind (p action)
   (lambda (point)
     (let ((r (funcall p point)))
       (if (epcl--success-p r)
 	  (let ((pos (epcl--point r))
-		(vs  (epcl--list  r)))
+		(vs  (epcl--value  r)))
 	    (epcl--success
 	     pos
-	     (apply action vs)))
+	     (funcall action vs)))
 	(epcl--failed point)))))
 
-(defun epcl-bind1 (p action)
-  (lambda (point)
-    (let ((r (funcall p point)))
-      (if (epcl--success-p r)
-	  (let ((pos (epcl--point r))
-		(vs  (epcl--list  r)))
-	    (epcl--success1
-	     pos
-	     (apply action vs)))
-	(epcl--failed point)))))
+
+(defun epcl-bind-seq (p action)
+  (epcl-bind
+   p
+   (lambda (x)
+     (apply action x))))
 
 (defmacro epcl-let (arglist &rest body)
-  (let ((vs (mapcar #'car (seq-filter #'listp arglist)))
-	(ps (mapcar (lambda (e)
-		      (if (listp e)
-			  (cadr e)
-			`(epcl-discard ,e))) arglist)))
-    `(epcl-bind
+  (let ((vs (mapcar
+	     (lambda (e)
+	       (if (listp e)
+		   (car e) (intern "epcl-let")))
+	     arglist))
+	(ps (mapcar
+	     (lambda (e)
+	       (if (listp e)
+		   (cadr e)
+		 e))
+	     arglist))
+	)
+    `(epcl-bind-seq
       (epcl-seq ,@ps)
-      (lambda ,vs ,@body))))
-
-(defmacro epcl-let (arglist &rest body)
-  (let ((vs (mapcar #'car (seq-filter #'listp arglist)))
-	(ps (mapcar (lambda (e)
-		      (if (listp e)
-			  (cadr e)
-			`(epcl-discard ,e))) arglist)))
-    `(epcl-bind
-      (epcl-seq ,@ps)
-      (lambda ,vs ,@body))))
-
+      (lambda ,vs ,@body))
+    ))
 
 (defun epcl-apply (p)
   (save-excursion
