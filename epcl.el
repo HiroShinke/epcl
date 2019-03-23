@@ -169,12 +169,13 @@
 (defun epcl-seq (&rest ps)
 
   (lambda (point)
+
     (let ((pos point)
 	  (ret nil)
 	  (done nil)
 	  (ps2 ps))
-      (while (and (not done)
-		  ps2)
+
+      (while (and (not done) ps2)
 
 	(let* ((p (car ps2))
 	       (r (funcall p pos))
@@ -258,6 +259,15 @@
    p
    (lambda (x)
      (apply action x))))
+
+(defun epcl-pred (p pred)
+  (lambda (point)
+    (let ((r (funcall p point)))
+      (if (epcl-ret-success-p r)
+	  (if (funcall pred (epcl-ret-value r))
+	      r
+	    (epcl-failed point))
+	r))))
 
 (defmacro epcl-let (arglist &rest body)
   (let ((vs (mapcar
