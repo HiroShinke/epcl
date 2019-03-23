@@ -130,6 +130,48 @@
   )
 
 
+(ert-deftest many-test ()
+  (should
+   (equal
+    (epcl-ret-success 7 '("a" "a" "a"))
+    (let* ((a (epcl-token (epcl-regexp "a")))
+	   (m (epcl-many a)))
+      (epcl-parse-string m " a a a"))
+    )
+   )
+  (should
+   (equal
+    (epcl-ret-success 1 '())
+    (let* ((a (epcl-token (epcl-regexp "a")))
+	   (m (epcl-many a)))
+      (epcl-parse-string m " b"))
+    )
+   )
+  )
 
+(ert-deftest many1-test ()
+  (should
+   (equal
+    (epcl-ret-success 7 '("a" "a" "a"))
+    (let* ((a (epcl-token (epcl-regexp "a")))
+	   (m (epcl-many1 a)))
+      (epcl-parse-string m " a a a"))
+    )
+   )
+  (should
+   (equal
+    (epcl-ret-failed 1)
+    (let* ((a (epcl-token (epcl-regexp "a")))
+	   (m (epcl-many1 a)))
+      (epcl-parse-string m "bbb"))
+    )
+   )
+  )
 
+(let* ((a  (epcl-token (epcl-regexp "[[:digit:]]+")))
+       (d  (epcl-bind a #'string-to-number))
+       (plus (epcl-token (epcl-regexp "\\+")))
+       (op (epcl-bind  plus (lambda (n) #'+) ))
+       (c  (epcl-chain d op)))
+  (epcl-parse-string c " 1 +  2 +3+4+5"))
 

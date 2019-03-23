@@ -47,6 +47,84 @@
   (lambda (point)
     (epcl-ret-success point c)))
 
+(defun epcl-fail (str)
+  (lambda (point)
+    (if str
+	(message (format "%s at %s" str point))
+      )
+    (epcl-ret-failed point)))
+
+(defun epcl-debug (label p)
+  (lambda (point)
+    (let ((r (funcall p point)))
+      (message (format "label=%s,ret=%s" label r))
+      r)))
+
+(defun epcl-many (p)
+
+  (lambda (point)
+
+    (let ((pos point)
+	  (success t)
+	  (ret nil)
+	  (done nil))
+      (while (not done)
+	(let* ((r (funcall p pos))
+	       (pos2 (epcl-ret-point r))
+	       (v    (epcl-ret-value r)))
+	  (cond ((epcl-ret-success-p r)
+		 (setq pos pos2)
+		 (setq ret (cons v ret))
+		 )
+		((/= pos pos2)
+		 (setq done t)
+		 (setq pos pos2)
+		 (setq success nil)
+		 )
+		(t
+		 (setq done t)
+		 (setq pos pos2)
+		 ))
+	  )
+	)
+      (if success
+	  (epcl-ret-success pos (reverse ret))
+	(epcl-ret-failed pos)))
+    )
+  )
+
+(defun epcl-many1 (p)
+  (epcl-let
+   ((v p)
+    (vs (epcl-many p)))
+   (cons v vs)))
+
+(defun epcl-chain (p op)
+
+  (let* ((opp   (epcl-seq op p))
+	 (chain (epcl-seq p (epcl-many opp))))
+
+    (epcl-bind-seq
+     chain
+     (lambda (v opvs)
+       (let ((vs (cons v (mapcar #'cadr opvs)))
+	     (ops (mapcar #'car opvs)))
+	 
+	 (while ops
+	   (let* ((o  (car ops))
+		  (v1 (car vs))
+		  (v2 (cadr vs))
+		  (v  (funcall o v1 v2)))
+	     (setq ops (cdr ops))
+	     (setq vs (cons v (cddr vs))))
+	   )
+	 (car vs)
+	 )
+       )
+     )
+    )
+  )
+
 (defun epcl-seq (&rest ps)
 
   (lambda (point)
