@@ -43,7 +43,19 @@
     (epcl-discard (epcl-regexp "\\s-*"))
     p)))
 
+
 (defun epcl-seq (&rest ps)
+  (epcl-bind1
+   (epcl--seq ps)
+   (lambda (vs)
+     (apply #'append vs))))
+
+
+(defun epcl--seq (ps)
+  " ps : parser list.
+    (epcl--seq ps) return each return value of parser as separate values in a list.
+    don't append these as like epcl-seq do.
+  "
   (lambda (point)
     (let ((pos point)
 	  (ret nil)
@@ -68,13 +80,15 @@
 	  )
 	)
       (if ret
-	  (epcl--success1 pos
-			  (apply #'append (reverse ret)))
+	  (epcl--success
+	   pos
+	   (reverse ret))
 	(epcl--failed pos)
 	)
       )
     )
   )
+
 
 (defun epcl-or (&rest ps)
   (lambda (point)
@@ -133,7 +147,18 @@
 	     pos
 	     (apply action vs)))
 	(epcl--failed point)))))
-	    
+
+(defun epcl-bind1 (p action)
+  (lambda (point)
+    (let ((r (funcall p point)))
+      (if (epcl--success-p r)
+	  (let ((pos (epcl--point r))
+		(vs  (epcl--list  r)))
+	    (epcl--success1
+	     pos
+	     (apply action vs)))
+	(epcl--failed point)))))
+
 (defmacro epcl-let (arglist &rest body)
   (let ((vs (mapcar #'car (seq-filter #'listp arglist)))
 	(ps (mapcar (lambda (e)
@@ -143,7 +168,17 @@
     `(epcl-bind
       (epcl-seq ,@ps)
       (lambda ,vs ,@body))))
-	
+
+(defmacro epcl-let (arglist &rest body)
+  (let ((vs (mapcar #'car (seq-filter #'listp arglist)))
+	(ps (mapcar (lambda (e)
+		      (if (listp e)
+			  (cadr e)
+			`(epcl-discard ,e))) arglist)))
+    `(epcl-bind
+      (epcl-seq ,@ps)
+      (lambda ,vs ,@body))))
+
 
 (defun epcl-apply (p)
   (save-excursion
