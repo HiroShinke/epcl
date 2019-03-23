@@ -154,7 +154,18 @@
 	(epcl-ret-success point nil))
        (t
 	(epcl-ret-failed (epcl-ret-point r)))))))
-  
+
+(defun epcl-not-followed (p)
+  (lambda (point)
+    (let ((r (funcall p point)))
+      (cond
+       ((epcl-ret-success-p r)
+	(epcl-ret-failed point))
+       ((/= point (epcl-ret-point r))
+	r)
+       (t
+	(epcl-ret-success point nil))))))
+       
 (defun epcl-seq (&rest ps)
 
   (lambda (point)

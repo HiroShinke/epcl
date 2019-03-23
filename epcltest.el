@@ -265,5 +265,31 @@
     )
    )
   )
-  
+
+(ert-deftest not-followed-by-test ()
+  (should
+   (equal
+    (epcl-ret-failed 2)
+    (let* ((a (epcl-regexp "a"))
+	   (b (epcl-regexp "b"))
+	   (nb (epcl-not-followd-by b))
+	   (p  (epcl-seq a nb)))
+      (epcl-parse-string p "ab")
+      )
+    )
+   )
+  (should
+   (equal
+    (epcl-ret-failed 2)
+    (let* ((a (epcl-regexp "a"))
+	   (b (epcl-regexp "b"))
+	   (nb (epcl-not-followd-by b))
+	   (p  (epcl-seq a nb)))
+      (epcl-parse-string p "aa")
+      )
+    )
+   )
+  )
+
+
 
