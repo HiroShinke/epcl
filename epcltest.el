@@ -195,3 +195,25 @@
    )
   )
 
+
+(ert-deftest option-test ()
+  (should
+   (equal
+    (epcl-ret-success 2 "a")
+    (let* ((a  (epcl-regexp "a"))
+	   (o  (epcl-option a)))
+      (epcl-parse-string o "a")
+      )
+    )
+   )
+  (should
+   (equal
+    (epcl-ret-success 1 nil)
+    (let* ((a  (epcl-regexp "a"))
+	   (o  (epcl-option a)))
+      (epcl-parse-string o "b")
+      )
+    )
+   )
+  )
+

@@ -134,6 +134,19 @@
    )
   )
 
+(defun epcl-option (p)
+  (lambda (point)
+    (let ((r (funcall p point)))
+      (cond
+       ((epcl-ret-success-p r)
+	r)
+       ((/= (epcl-ret-point r)
+	    point)
+	(epcl-ret-failed (epcl-ret-point r)))
+       (t
+	(epcl-ret-success point nil))))))
+
+
 (defun epcl-seq (&rest ps)
 
   (lambda (point)
