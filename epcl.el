@@ -125,6 +125,15 @@
     )
   )
 
+(defun epcl-paren (po p pc)
+  (epcl-let
+   (po
+    (x p)
+    pc)
+   x
+   )
+  )
+
 (defun epcl-seq (&rest ps)
 
   (lambda (point)

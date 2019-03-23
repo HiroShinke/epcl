@@ -182,4 +182,16 @@
    )
   )
 
+(ert-deftest paren-test ()
+  (should
+   (equal
+    (epcl-ret-success 10 "a")
+    (let* ((po (epcl-regexp "("))
+	   (p  (epcl-token (epcl-regexp "a")))
+	   (pc (epcl-regexp ")"))
+	   (a  (epcl-paren po p pc)))
+      (epcl-parse-string a "(  a)"))
+    )
+   )
+  )
 
