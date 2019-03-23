@@ -143,8 +143,10 @@
 (defmacro epcl-let (arglist &rest body)
   (let ((vs (mapcar
 	     (lambda (e)
-	       (if (listp e)
-		   (car e) (intern "epcl-let")))
+	       (if (and (listp e)
+			(car e))
+		   (car e)
+		 (intern "epcl-let")))
 	     arglist))
 	(ps (mapcar
 	     (lambda (e)
