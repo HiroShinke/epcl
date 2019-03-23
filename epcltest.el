@@ -64,29 +64,53 @@
 
 
 (ert-deftest seq-test ()
-    (should (equal
-	     (epcl-ret-success 11 '("a" "b" "c"))
-	     (let* ((a (epcl-token (epcl-regexp "a")))
-		    (b (epcl-token (epcl-regexp "b")))
-		    (c (epcl-token (epcl-regexp "c")))
-		    (abc (epcl-seq a b c)))
-	     (epcl-parse-string abc "    a b  c"))
-	     )
-	    )
+  (should
+   (equal
+    (epcl-ret-success 11 '("a" "b" "c"))
+    (let* ((a (epcl-token (epcl-regexp "a")))
+	   (b (epcl-token (epcl-regexp "b")))
+	   (c (epcl-token (epcl-regexp "c")))
+	   (abc (epcl-seq a b c)))
+      (epcl-parse-string abc "    a b  c"))
     )
+   )
+  (should
+   (equal
+    (epcl-ret-failed 8)
+    (let* ((a (epcl-token (epcl-regexp "a")))
+	   (b (epcl-token (epcl-regexp "b")))
+	   (c (epcl-token (epcl-regexp "c")))
+	   (abc (epcl-seq a b c)))
+      (epcl-parse-string abc "    a b  d"))
+    )
+   )
+  )
 
 (ert-deftest or-test ()
-    (should (equal
-	     (epcl-ret-success 6 "b")
-	     (let* ((a (epcl-token (epcl-regexp "a")))
-		    (b (epcl-token (epcl-regexp "b")))
-		    (c (epcl-token (epcl-regexp "c")))
-		    (abc (epcl-or (epcl-try a)
-				  (epcl-try b)
-				  c)))
-	       (epcl-parse-string abc "    b"))
-	    )
+  (should
+   (equal
+    (epcl-ret-success 6 "b")
+    (let* ((a (epcl-token (epcl-regexp "a")))
+	   (b (epcl-token (epcl-regexp "b")))
+	   (c (epcl-token (epcl-regexp "c")))
+	   (abc (epcl-or (epcl-try a)
+			 (epcl-try b)
+			 c)))
+      (epcl-parse-string abc "    b"))
     )
+   )
+  (should
+   (equal
+    (epcl-ret-success 6 "b")
+    (let* ((a (epcl-token (epcl-regexp "a")))
+	   (b (epcl-token (epcl-regexp "b")))
+	   (c (epcl-token (epcl-regexp "c")))
+	   (abc (epcl-or a
+			 b
+			 c)))
+      (epcl-parse-string abc "    b"))
+    )
+   )
   )
 
 ;; can't test macroexpand because use of interned variable
@@ -216,4 +240,30 @@
     )
    )
   )
+
+(ert-deftest lookahead-test ()
+  (should
+   (equal
+    (epcl-ret-success 2 '("a" nil))
+    (let* ((a (epcl-regexp "a"))
+	   (b (epcl-regexp "b"))
+	   (lb (epcl-lookahead b))
+	   (p  (epcl-seq a lb)))
+      (epcl-parse-string p "ab")
+      )
+    )
+   )
+  (should
+   (equal
+    (epcl-ret-failed 2)
+    (let* ((a (epcl-regexp "a"))
+	   (b (epcl-regexp "b"))
+	   (lb (epcl-lookahead b))
+	   (p  (epcl-seq a lb)))
+      (epcl-parse-string p "aa")
+      )
+    )
+   )
+  )
+  
 
