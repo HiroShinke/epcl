@@ -192,7 +192,7 @@
    )
   )
 
-(ert-deftest chain-test ()
+(ert-deftest chainl-1-test ()
   (should
    (equal
     (epcl-ret-success 10 15)
@@ -200,7 +200,21 @@
 	   (d  (epcl-bind a #'string-to-number))
 	   (plus (epcl-token (epcl-regexp "\\+")))
 	   (op (epcl-bind  plus (lambda (n) #'+) ))
-	   (c  (epcl-chain d op)))
+	   (c  (epcl-chainl-1 d op)))
+      (epcl-parse-string c "1+2+3+4+5"))
+    )
+   )
+  )
+
+(ert-deftest chainr-1-test ()
+  (should
+   (equal
+    (epcl-ret-success 10 15)
+    (let* ((a  (epcl-token (epcl-regexp "[[:digit:]]+")))
+	   (d  (epcl-bind a #'string-to-number))
+	   (plus (epcl-token (epcl-regexp "\\+")))
+	   (op (epcl-bind  plus (lambda (n) #'+) ))
+	   (c  (epcl-chainr-1 d op)))
       (epcl-parse-string c "1+2+3+4+5"))
     )
    )
@@ -244,7 +258,7 @@
 (ert-deftest lookahead-test ()
   (should
    (equal
-    (epcl-ret-success 2 '("a" nil))
+    (epcl-ret-success 2 '("a" "b"))
     (let* ((a (epcl-regexp "a"))
 	   (b (epcl-regexp "b"))
 	   (lb (epcl-lookahead b))
@@ -289,6 +303,94 @@
    )
   )
 
+(ert-deftest end-by-1-test ()
+  (should
+   (equal
+    (epcl-ret-success 5 '("a" "a" "a"))
+    (let* ((a (epcl-regexp "a"))
+	   (b (epcl-regexp "b"))
+	   (p (epcl-end-by-1 a b)))
+      (epcl-parse-string p "aaab")
+      )
+    )
+   )
+  (should
+   (equal
+    (epcl-ret-failed 1)
+    (let* ((a (epcl-regexp "a"))
+	   (b (epcl-regexp "b"))
+	   (p (epcl-end-by-1 a b)))
+      (epcl-parse-string p "b")
+      )
+    )
+   )
+  )
+
+(ert-deftest sep-end-by-1-test ()
+  (should
+   (equal
+    (epcl-ret-success 7 '("a" "a" "a"))
+    (let* ((a (epcl-regexp "a"))
+	   (b (epcl-regexp "b"))
+	   (p (epcl-sep-end-by-1 a b)))
+      (epcl-parse-string p "ababab")
+      )
+    )
+   )
+  (should
+   (equal
+    (epcl-ret-success 6 '("a" "a" "a"))
+    (let* ((a (epcl-regexp "a"))
+	   (b (epcl-regexp "b"))
+	   (p (epcl-sep-end-by-1 a b)))
+      (epcl-parse-string p "ababa")
+      )
+    )
+   )
+  (should
+   (equal
+    (epcl-ret-failed 1)
+    (let* ((a (epcl-regexp "a"))
+	   (b (epcl-regexp "b"))
+	   (p (epcl-sep-end-by-1 a b)))
+      (epcl-parse-string p "b")
+      )
+    )
+   )
+  )
+
+(ert-deftest sep-end-by-test ()
+  (should
+   (equal
+    (epcl-ret-success 7 '("a" "a" "a"))
+    (let* ((a (epcl-regexp "a"))
+	   (b (epcl-regexp "b"))
+	   (p (epcl-sep-end-by a b)))
+      (epcl-parse-string p "ababab")
+      )
+    )
+   )
+  (should
+   (equal
+    (epcl-ret-success 6 '("a" "a" "a"))
+    (let* ((a (epcl-regexp "a"))
+	   (b (epcl-regexp "b"))
+	   (p (epcl-sep-end-by a b)))
+      (epcl-parse-string p "ababa")
+      )
+    )
+   )
+  (should
+   (equal
+    (epcl-ret-success 1 '())
+    (let* ((a (epcl-regexp "a"))
+	   (b (epcl-regexp "b"))
+	   (p (epcl-sep-end-by a b)))
+      (epcl-parse-string p "b")
+      )
+    )
+   )
+  )
 
 
 (ert-deftest not-followed-test ()
@@ -348,3 +450,26 @@
     )
    )
   )
+
+(ert-deftest lazy-test ()
+  (should
+   (equal
+    (epcl-ret-success 2 "a")
+    (let* ((a (epcl-regexp "a"))
+	   (p (epcl-lazy a)))
+      (epcl-parse-string p "a")
+      )
+    )
+   )
+  (should
+   (equal
+    (epcl-ret-success 2 "a")
+    (let* ((a nil)
+	   (p (epcl-lazy a)))
+      (setq a (epcl-regexp "a"))
+      (epcl-parse-string p "a")
+      )
+    )
+   )
+  )
+

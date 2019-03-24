@@ -99,7 +99,7 @@
     (vs (epcl-many p)))
    (cons v vs)))
 
-(defun epcl-chain (p op)
+(defun epcl-chainl-1 (p op)
 
   (let* ((opp   (epcl-seq op p))
 	 (chain (epcl-seq p (epcl-many opp))))
@@ -124,6 +124,36 @@
      )
     )
   )
+
+(defun epcl-chainr-1 (p op)
+
+  (let* ((opp   (epcl-seq op p))
+	 (chain (epcl-seq p (epcl-many opp))))
+
+    (epcl-bind-seq
+     chain
+     (lambda (v opvs)
+       (let ((vs (cons v (mapcar #'cadr opvs)))
+	     (ops (mapcar #'car opvs)))
+	 
+	 (setq vs (reverse vs))
+	 (setq ops (reverse ops))
+
+	 (while ops
+	   (let* ((o  (car ops))
+		  (v1 (cadr vs))
+		  (v2 (car vs))
+		  (v  (funcall o v1 v2)))
+	     (setq ops (cdr ops))
+	     (setq vs (cons v (cddr vs))))
+	   )
+	 (car vs)
+	 )
+       )
+     )
+    )
+  )
+
 
 (defun epcl-paren (po p pc)
   (epcl-let (po (x p) pc)  x )
@@ -186,13 +216,38 @@
 
   )
 
+(defun epcl-sep-end-by (p sep)
+
+  "sepEndBy p sep parses zero or more occurrences of p, 
+   separated and optionally ended by sep, ie. 
+   haskell style statements. Returns a list of values returned by p."
+
+  (epcl-option (epcl-sep-end-by-1 p sep))
+
+  )
+
+(defun epcl-sep-end-by-1 (p sep)
+
+  "sepEndBy p sep parses one or more occurrences of p, 
+   separated and optionally ended by sep, ie. 
+   haskell style statements. Returns a list of values returned by p."
+
+  (let* (
+	 (sepp (epcl-let (sep (v p)) v))
+	 )
+    (epcl-let ((v p)
+	       (vs (epcl-many sepp))
+	       (nil (epcl-option sep)))
+	      (cons v vs)))
+  )
+
 
 (defun epcl-lookahead (p)
   (lambda (point)
     (let ((r (funcall p point)))
       (cond
        ((epcl-ret-success-p r)
-	(epcl-ret-success point nil))
+	(epcl-ret-success point (epcl-ret-value r)))
        (t
 	(epcl-ret-failed (epcl-ret-point r)))))))
 
