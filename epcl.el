@@ -146,6 +146,24 @@
        (t
 	(epcl-ret-success point nil))))))
 
+
+(defun epcl-sep-by (p sep)
+  
+  "sepBy p sep parses zero or more occurrences of p, 
+   separated by sep. 
+   Returns a list of values returned by p."
+
+  (let (
+	(sepp (epcl-let (sep (v p)) v))
+	)
+    (epcl-let ((v (epcl-option p))
+	       (vs (epcl-many sepp)))
+	      (if v
+		  (cons v vs)
+		nil))
+    )
+  )
+
 (defun epcl-lookahead (p)
   (lambda (point)
     (let ((r (funcall p point)))

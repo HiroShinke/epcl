@@ -291,5 +291,35 @@
    )
   )
 
-
-
+(ert-deftest sep-by-test ()
+  (should
+   (equal
+    (epcl-ret-success 6 '("a" "a" "a"))
+    (let* ((a (epcl-regexp "a"))
+	   (c (epcl-regexp "c"))
+	   (p (epcl-sep-by a c)))
+      (epcl-parse-string p "acaca")
+      )
+    )
+   )
+  (should
+   (equal
+    (epcl-ret-success 2 '("a"))
+    (let* ((a (epcl-regexp "a"))
+	   (c (epcl-regexp "c"))
+	   (p (epcl-sep-by a c)))
+      (epcl-parse-string p "ab")
+      )
+    )
+   )
+  (should
+   (equal
+    (epcl-ret-success 1 '())
+    (let* ((a (epcl-regexp "a"))
+	   (c (epcl-regexp "c"))
+	   (p (epcl-sep-by a c)))
+      (epcl-parse-string p "b")
+      )
+    )
+   )
+  )
