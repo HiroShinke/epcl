@@ -173,12 +173,12 @@
    )
   )
 
-(ert-deftest many1-test ()
+(ert-deftest many-1-test ()
   (should
    (equal
     (epcl-ret-success 7 '("a" "a" "a"))
     (let* ((a (epcl-token (epcl-regexp "a")))
-	   (m (epcl-many1 a)))
+	   (m (epcl-many-1 a)))
       (epcl-parse-string m " a a a"))
     )
    )
@@ -186,7 +186,7 @@
    (equal
     (epcl-ret-failed 1)
     (let* ((a (epcl-token (epcl-regexp "a")))
-	   (m (epcl-many1 a)))
+	   (m (epcl-many-1 a)))
       (epcl-parse-string m "bbb"))
     )
    )
@@ -209,7 +209,7 @@
 (ert-deftest paren-test ()
   (should
    (equal
-    (epcl-ret-success 10 "a")
+    (epcl-ret-success 6 "a")
     (let* ((po (epcl-regexp "("))
 	   (p  (epcl-token (epcl-regexp "a")))
 	   (pc (epcl-regexp ")"))
@@ -266,13 +266,38 @@
    )
   )
 
-(ert-deftest not-followed-by-test ()
+(ert-deftest end-by-test ()
+  (should
+   (equal
+    (epcl-ret-success 5 '("a" "a" "a"))
+    (let* ((a (epcl-regexp "a"))
+	   (b (epcl-regexp "b"))
+	   (p (epcl-end-by a b)))
+      (epcl-parse-string p "aaab")
+      )
+    )
+   )
+  (should
+   (equal
+    (epcl-ret-success 2 '())
+    (let* ((a (epcl-regexp "a"))
+	   (b (epcl-regexp "b"))
+	   (p (epcl-end-by a b)))
+      (epcl-parse-string p "b")
+      )
+    )
+   )
+  )
+
+
+
+(ert-deftest not-followed-test ()
   (should
    (equal
     (epcl-ret-failed 2)
     (let* ((a (epcl-regexp "a"))
 	   (b (epcl-regexp "b"))
-	   (nb (epcl-not-followd-by b))
+	   (nb (epcl-not-followed b))
 	   (p  (epcl-seq a nb)))
       (epcl-parse-string p "ab")
       )
@@ -280,10 +305,10 @@
    )
   (should
    (equal
-    (epcl-ret-failed 2)
+    (epcl-ret-success 2 '("a" nil))
     (let* ((a (epcl-regexp "a"))
 	   (b (epcl-regexp "b"))
-	   (nb (epcl-not-followd-by b))
+	   (nb (epcl-not-followed b))
 	   (p  (epcl-seq a nb)))
       (epcl-parse-string p "aa")
       )

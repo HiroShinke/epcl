@@ -93,7 +93,7 @@
     )
   )
 
-(defun epcl-many1 (p)
+(defun epcl-many-1 (p)
   (epcl-let
    ((v p)
     (vs (epcl-many p)))
@@ -126,12 +126,7 @@
   )
 
 (defun epcl-paren (po p pc)
-  (epcl-let
-   (po
-    (x p)
-    pc)
-   x
-   )
+  (epcl-let (po (x p) pc)  x )
   )
 
 (defun epcl-option (p)
@@ -152,17 +147,45 @@
   "sepBy p sep parses zero or more occurrences of p, 
    separated by sep. 
    Returns a list of values returned by p."
+  (epcl-option (epcl-sep-by-1 p sep))
+  )
 
-  (let (
-	(sepp (epcl-let (sep (v p)) v))
+(defun epcl-sep-by-1 (p sep)
+
+  "sepBy1 p sep parses one or more occurrences of p, 
+   separated by sep. 
+   Returns a list of values returned by p."
+
+  (let* (
+	 (sepp   (epcl-let (sep (v p)) v))
 	)
-    (epcl-let ((v (epcl-option p))
+    (epcl-let ((v  (epcl-option p))
 	       (vs (epcl-many sepp)))
 	      (if v
 		  (cons v vs)
-		nil))
+		nil)
+	      )
     )
   )
+
+(defun epcl-end-by (p sep)
+
+  "endBy p sep parses zero or more occurrences of p, 
+   separated and ended by sep. 
+   Returns a list of values returned by p."
+  (epcl-let ((vs (epcl-many p)) sep) vs )
+
+  )
+
+(defun epcl-end-by-1 (p sep)
+
+  "endBy p sep parses zero or more occurrences of p, 
+   separated and ended by sep. 
+   Returns a list of values returned by p."
+  (epcl-let ((vs (epcl-many-1 p)) sep) vs )
+
+  )
+
 
 (defun epcl-lookahead (p)
   (lambda (point)
