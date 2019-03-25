@@ -316,7 +316,9 @@
 		    (setq ret (epcl-ret-failed pos))
 		    (setq done t))))))
 	(setq ps2 (cdr ps2)))
-      ret
+      (if ret
+	  ret
+	(epcl-ret-failed point))
       )
     )
   )
