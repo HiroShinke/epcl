@@ -303,19 +303,24 @@
     (let ((ret nil)
 	  (done nil)
 	  (ps2 ps))
-      (while (and (not done)
-		  ps2)
+      (while (and (not done) ps2)
+		  
 	(let* ((p (car ps2))
-	       (r (funcall p point)))
-	  (if (epcl-ret-success-p r)
-	      (progn (setq ret r)
-		     (setq done t))
-	    (let ((pos (epcl-ret-point r)))
-	      (if (/= pos point)
-		  (progn
-		    (setq ret (epcl-ret-failed pos))
-		    (setq done t))))))
-	(setq ps2 (cdr ps2)))
+	       (r (funcall p point))
+	       (pos (epcl-ret-point r)))
+	  (cond
+	   ((epcl-ret-success-p r)
+	    (progn (setq ret r)
+		   (setq done t)))
+
+	   ((/= pos point)
+	    (progn
+	      (setq ret (epcl-ret-failed pos))
+	      (setq done t)))
+	   )
+	  (setq ps2 (cdr ps2))
+	  )
+	)
       (if ret
 	  ret
 	(epcl-ret-failed point))
