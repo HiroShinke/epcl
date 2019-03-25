@@ -299,10 +299,13 @@
 
 
 (defun epcl-or (&rest ps)
+
   (lambda (point)
+
     (let ((ret nil)
 	  (done nil)
 	  (ps2 ps))
+
       (while (and (not done) ps2)
 		  
 	(let* ((p (car ps2))
