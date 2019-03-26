@@ -99,7 +99,22 @@
     (vs (epcl-many p)))
    (cons v vs)))
 
-(defun epcl-chainl-1 (p op)
+(defun epcl--stack-machine (ops
+			    vs
+			    flip)
+  (while ops
+    (let* ((o  (car ops))
+	   (v1 (car vs))
+	   (v2 (cadr vs))
+	   (v  (funcall (funcall flip o) v1 v2)))
+      (setq ops (cdr ops))
+      (setq vs (cons v (cddr vs))))
+    )
+  (car vs)
+  )
+
+
+(defun epcl--chain-helper (p op eval)
 
   (let* ((opp   (epcl-seq op p))
 	 (chain (epcl-seq p (epcl-many opp))))
@@ -109,49 +124,35 @@
      (lambda (v opvs)
        (let ((vs (cons v (mapcar #'cadr opvs)))
 	     (ops (mapcar #'car opvs)))
-	 
-	 (while ops
-	   (let* ((o  (car ops))
-		  (v1 (car vs))
-		  (v2 (cadr vs))
-		  (v  (funcall o v1 v2)))
-	     (setq ops (cdr ops))
-	     (setq vs (cons v (cddr vs))))
-	   )
-	 (car vs)
+	 (funcall eval ops vs)
 	 )
        )
      )
     )
   )
 
+
+(defun epcl-chainl-1 (p op)
+  (epcl--chain-helper
+   p
+   op
+   (lambda (ops vs)
+     (epcl--stack-machine ops
+			  vs
+			  (lambda (n) n)
+			  )))
+  )
+
 (defun epcl-chainr-1 (p op)
-
-  (let* ((opp   (epcl-seq op p))
-	 (chain (epcl-seq p (epcl-many opp))))
-
-    (epcl-bind-seq
-     chain
-     (lambda (v opvs)
-       (let ((vs (cons v (mapcar #'cadr opvs)))
-	     (ops (mapcar #'car opvs)))
-	 
-	 (setq vs (reverse vs))
-	 (setq ops (reverse ops))
-
-	 (while ops
-	   (let* ((o  (car ops))
-		  (v1 (cadr vs))
-		  (v2 (car vs))
-		  (v  (funcall o v1 v2)))
-	     (setq ops (cdr ops))
-	     (setq vs (cons v (cddr vs))))
-	   )
-	 (car vs)
-	 )
-       )
-     )
-    )
+  (epcl--chain-helper
+   p
+   op
+   (lambda (ops vs)
+     (epcl--stack-machine (reverse ops)
+			  (reverse vs)
+			  (lambda (x) (lambda (n m)
+					(funcall x m n)))
+			  )))
   )
 
 
