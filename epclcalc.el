@@ -5,7 +5,7 @@
 (load "epcl")
 
 (defun token-regexp (str)
-  ;; (epcl-debug (format "token, str=%s" str)
+;;  (epcl-debug (format "token, str=%s" str)
   (epcl-token (epcl-regexp str))
 ;;  )
   )
@@ -46,6 +46,11 @@
     )
   )
 
+(defun epcl-calc-print ()
+  (interactive)
+  (message (format "ret=%s" (epcl-ret-value (epcl-calc))))
+  )
+
 (defun epcl-calc-string (str)
   (with-temp-buffer
     (insert str)
@@ -53,9 +58,16 @@
     (epcl-calc)
     ))
 
-(epcl-calc-string "100")
-(epcl-calc-string "(100)")
-(epcl-calc-string "  100")
-(epcl-calc-string "1 + 2")
-(epcl-calc-string "1 + 2  *5 ")
-(epcl-calc-string "(1 + 2)  *5 ")
+
+(ert-deftest calc1 ()
+  (should (equal 100 (epcl-ret-value (epcl-calc-string "100"))))
+  (should (equal 3 (epcl-ret-value (epcl-calc-string "1 + 2"))))
+  (should (equal 2 (epcl-ret-value (epcl-calc-string "3 - 1"))))
+  (should (equal 2 (epcl-ret-value (epcl-calc-string "4 / 2"))))
+  (should (equal 8 (epcl-ret-value (epcl-calc-string "4 * 2"))))
+  (should (equal 7 (epcl-ret-value (epcl-calc-string "1 + 2 * 3"))))
+  (should (equal 9 (epcl-ret-value (epcl-calc-string "(1 + 2) * 3"))))
+  (should (equal 8 (epcl-ret-value (epcl-calc-string " 2 * (1 + 3)"))))
+  )
+
+
