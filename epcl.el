@@ -114,7 +114,7 @@
   )
 
 
-(defun epcl--chain-helper (p op eval)
+(defun epcl--chain-parser (p op eval)
 
   (let* ((opp   (epcl-seq op p))
 	 (chain (epcl-seq p (epcl-many opp))))
@@ -133,7 +133,7 @@
 
 
 (defun epcl-chainl-1 (p op)
-  (epcl--chain-helper
+  (epcl--chain-parser
    p
    op
    (lambda (ops vs)
@@ -144,7 +144,7 @@
   )
 
 (defun epcl-chainr-1 (p op)
-  (epcl--chain-helper
+  (epcl--chain-parser
    p
    op
    (lambda (ops vs)
