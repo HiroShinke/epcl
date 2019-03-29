@@ -47,6 +47,10 @@
   (lambda (point)
     (epcl-ret-success point c)))
 
+(defun epcl-return (c)
+  (lambda (point)
+    (epcl-ret-success point c)))
+
 (defun epcl-fail (str)
   (lambda (point)
     (if str
@@ -395,6 +399,54 @@
       (epcl-seq ,@ps)
       (lambda ,vs ,@body))
     ))
+
+(defun epcl-bind-m (p func)
+  (lambda (point)
+    (let ((r (funcall p point)))
+      (if (epcl-ret-success-p r)
+	  (let ((pos (epcl-ret-point r))
+		(v  (epcl-ret-value  r)))
+	    (funcall (funcall func v) pos))
+	r))))
+
+(defmacro epcl-let* (args &rest body)
+  (epcl-let*-helper args body)
+  )
+
+(defun epcl-let*-helper (args body)  
+
+  (if args
+
+      (let ((arg (car args)))
+
+	(if (listp arg)
+	    
+	    (let* ((s (car arg))
+		   (p (cadr arg))
+		   (sym (if s s (intern "s"))))
+	      
+	      (epcl--bind-template p s (cdr args) body)
+	      )
+	  (let ((sym (intern "s")))
+	    (epcl--bind-template arg sym (cdr args) body)
+	    )
+	  )
+	)
+    `(epcl-return (progn ,@body))
+    )
+  )
+
+(defun epcl--bind-template (p s as body)
+
+  `(epcl-bind-m
+    ,p
+    (lambda (,s)
+      ,(epcl-let*-helper as body)
+      )
+    )
+  )
+  
+
 
 (defun epcl-apply (p)
   (save-excursion
