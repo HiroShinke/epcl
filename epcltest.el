@@ -1,4 +1,4 @@
-
+;; -*- lexical-binding: t -*-
 
 ;; (require 'epcl)
 (load "epcl")
@@ -472,4 +472,76 @@
     )
    )
   )
+
+(ert-deftest bind-m-test ()
+  (should
+   (equal
+    (epcl-ret-success 3 "b")
+    (let* ((a (epcl-regexp "a"))
+	   (b (epcl-regexp "b"))
+	   (p (epcl-bind-m
+	       a
+	       (lambda (n) b))))
+      (epcl-parse-string p "ab"))
+    )
+   )
+  (should
+   (equal
+    (epcl-ret-success 3 "b")
+    (let* ((a (epcl-regexp "a"))
+	   (b (epcl-regexp "b"))
+	   (c (epcl-regexp "c"))
+	   (p (epcl-bind-m
+	       a
+	       (lambda (n) (if (equal n "a")
+			       b c)))))
+      (epcl-parse-string p "ab"))
+    )
+   )
+  )    
+
+
+(ert-deftest epcl-let*-test ()
+  (should
+   (equal
+    (epcl-ret-success 3 "x")
+    (let ((p (epcl-let* ((a (epcl-regexp "a"))
+			 (b (epcl-regexp "b")))
+			"x")))
+      (epcl-parse-string p "ab"))
+    )
+   )
+  (should
+   (equal
+    (epcl-ret-success 3 '("a" "b"))
+    (let ((p (epcl-let* ((a (epcl-regexp "[abc]"))
+			 (x (if (equal a "a") 
+				(epcl-regexp "b") (epcl-regexp "c"))))
+			(list a x))))
+      (epcl-parse-string p "ab"))
+    )
+   )
+  (should
+   (equal
+    (epcl-ret-success 3 '("b" "c"))
+    (let ((p (epcl-let* ((a (epcl-regexp "[abc]"))
+			 (x (if (equal a "a") 
+				(epcl-regexp "b") (epcl-regexp "c"))))
+			(list a x))))
+      (epcl-parse-string p "bc"))
+    )
+   )
+  (should
+   (equal
+    (epcl-ret-failed 2)
+    (let ((p (epcl-let* ((a (epcl-regexp "[abc]"))
+			 (x (if (equal a "a") 
+				(epcl-regexp "b") (epcl-regexp "c"))))
+			(list a x))))
+      (epcl-parse-string p "ac"))
+    )
+   )
+)
+
+
 
